@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molar Mass Practice Pro | ACHS Chemistry</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Added Noto Serif for the chemical formulas */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Fira+Code:wght@400;500&display=swap');
+        
+        :root {
+            --atom-blue: #3b82f6;
+            --atom-green: #10b981;
+            --atom-dark: #1e293b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: var(--atom-dark);
+        }
+
+        /* Formula display using Noto Serif for academic styling */
+        .formula-display {
+            font-family: 'Noto Serif', serif;
+            letter-spacing: 0.02em;
+        }
+
+        .periodic-table-grid {
+            display: grid;
+            grid-template-columns: repeat(18, minmax(0, 1fr));
+            gap: 1px;
+        }
+
+        .element-card {
+            aspect-ratio: 1/1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1px;
+            transition: transform 0.1s;
+            cursor: default;
+            padding: 1px;
+            overflow: hidden;
+        }
+
+        .element-card:hover {
+            transform: scale(2);
+            z-index: 50;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+            border-radius: 4px;
+        }
+
+        .subscript {
+            vertical-align: sub;
+            font-size: 0.7em;
+            line-height: 0;
+            margin-left: 1px;
+        }
+
+        .feedback-pop {
+            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Periodic Table Category Colors */
+        .alkali { background-color: #fee2e2; border: 1px solid #ef4444; }
+        .alkaline { background-color: #ffedd5; border: 1px solid #f97316; }
+        .transition { background-color: #fef9c3; border: 1px solid #eab308; }
+        .post-transition { background-color: #dcfce7; border: 1px solid #22c55e; }
+        .metalloid { background-color: #ccfbf1; border: 1px solid #14b8a6; }
+        .nonmetal { background-color: #dbeafe; border: 1px solid #3b82f6; }
+        .noble { background-color: #f3e8ff; border: 1px solid #a855f7; }
+        .halogen { background-color: #fae8ff; border: 1px solid #d946ef; }
+        .lanthanide { background-color: #f1f5f9; border: 1px solid #64748b; }
+
+        /* Calculator Styles */
+        .calc-btn {
+            @apply flex items-center justify-center p-2 rounded-lg text-sm font-bold transition-all active:scale-95 bg-white hover:bg-blue-50 border-2 border-blue-400 text-blue-900 shadow-sm;
+        }
+        .calc-btn-op { @apply bg-blue-100 text-blue-800 hover:bg-blue-200 border-2 border-blue-400; }
+        .calc-btn-eq { @apply bg-blue-600 text-white hover:bg-blue-700 border-2 border-blue-800 shadow-md shadow-blue-200; }
+
+        .step-container {
+            transition: all 0.3s ease;
+        }
+        .hidden-step {
+            display: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div>
+                <div class="text-3xl font-black text-blue-600 uppercase tracking-tighter mb-0.5">ACHS Chemistry Practice</div>
+                <h1 class="text-xl font-bold text-slate-800 tracking-tight leading-none">Molar Mass & Mole Conversions</h1>
+            </div>
+            <div class="text-right">
+                <div class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Score</div>
+                <div class="text-3xl font-bold text-blue-600" id="score-display">0</div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Main Problem Area -->
+            <div class="lg:col-span-3 space-y-6">
+                <div id="problem-card" class="bg-white p-8 rounded-3xl shadow-lg border border-slate-100 text-center relative overflow-hidden min-h-[450px] flex flex-col justify-center">
+                    <div id="difficulty-badge" class="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-slate-100 text-slate-500">
+                        Level 1
+                    </div>
+                    
+                    <!-- Compound Header -->
+                    <div id="compound-info">
+                        <div id="label-formula" class="mb-2 text-slate-400 text-sm font-medium uppercase tracking-widest">Chemical Formula</div>
+                        <div id="formula-container" class="formula-display text-5xl md:text-6xl font-bold text-slate-800 my-6 transition-all duration-300">
+                            H<span class="subscript">2</span>O
+                        </div>
+                        <div id="label-name" class="mt-4 mb-2 text-slate-400 text-sm font-medium uppercase tracking-widest" style="display:none">Compound Name</div>
+                        <div id="compound-name" class="text-slate-500 italic mb-8 text-xl">Water</div>
+                    </div>
+
+                    <!-- Step 1: Molar Mass -->
+                    <div id="step-1" class="step-container">
+                        <div class="max-w-xs mx-auto space-y-4">
+                            <div class="text-sm font-bold text-blue-600 uppercase tracking-widest mb-2">Step 1: Calculate Molar Mass</div>
+                            <div class="relative">
+                                <input type="number" id="mass-input" step="0.01" placeholder="0.00" 
+                                    class="w-full text-center text-3xl font-bold p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-blue-500 focus:outline-none transition-all"
+                                >
+                                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">g/mol</span>
+                            </div>
+                            <button id="check-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all active:scale-95">
+                                Verify Molar Mass
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Mole/Gram Conversion -->
+                    <div id="step-2" class="step-container hidden-step">
+                        <div class="text-sm font-bold text-green-600 uppercase tracking-widest mb-6">Step 2: Mole-Mass Conversion</div>
+                        
+                        <!-- Dimensional Analysis Work Chain -->
+                        <div class="flex flex-wrap items-center justify-center gap-4 mb-8 font-mono text-lg">
+                            <div class="p-4 bg-slate-50 border-2 border-slate-200 rounded-xl">
+                                <span id="given-value">15.00</span> <span id="given-unit" class="text-slate-500">g</span>
+                            </div>
+                            <div class="text-2xl text-slate-400">×</div>
+                            
+                            <!-- Conversion Factor -->
+                            <div id="factor-container" class="relative flex flex-col items-center justify-center w-48 h-24 border-2 border-dashed border-blue-300 rounded-xl bg-blue-50/30 transition-all">
+                                <div id="factor-num" class="text-sm font-bold text-blue-800">?</div>
+                                <div class="w-32 h-0.5 bg-blue-400 my-1"></div>
+                                <div id="factor-den" class="text-sm font-bold text-blue-800">?</div>
+                            </div>
+
+                            <div class="text-2xl text-slate-400">=</div>
+
+                            <div class="relative w-40">
+                                <input type="number" id="conversion-answer" step="0.01" placeholder="Answer" 
+                                    class="w-full text-center font-bold p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-green-500 focus:outline-none"
+                                >
+                                <span id="target-unit" class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-slate-400">mol</span>
+                            </div>
+                        </div>
+
+                        <!-- Selector Buttons -->
+                        <div class="mb-8">
+                            <p class="text-xs text-slate-400 uppercase font-bold mb-3 tracking-widest">Select the correct conversion factor:</p>
+                            <div class="flex justify-center gap-4">
+                                <button onclick="selectFactor('g_to_mol')" class="factor-choice px-4 py-3 bg-white border-2 border-blue-400 rounded-xl hover:bg-blue-50 transition-all group">
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-xs font-bold">1 mol</span>
+                                        <hr class="w-full border-blue-200 my-1">
+                                        <span class="text-xs font-bold text-blue-600"><span class="factor-val-mm">?</span> g</span>
+                                    </div>
+                                </button>
+                                <button onclick="selectFactor('mol_to_g')" class="factor-choice px-4 py-3 bg-white border-2 border-blue-400 rounded-xl hover:bg-blue-50 transition-all group">
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-xs font-bold text-blue-600"><span class="factor-val-mm">?</span> g</span>
+                                        <hr class="w-full border-blue-200 my-1">
+                                        <span class="text-xs font-bold">1 mol</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button id="final-check-btn" class="max-w-xs mx-auto w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-green-100 transition-all active:scale-95">
+                            Complete Conversion
+                        </button>
+                    </div>
+
+                    <div id="feedback-area" class="mt-6 h-12 flex items-center justify-center font-semibold text-lg"></div>
+                </div>
+
+                <!-- Periodic Table Mini -->
+                <div class="bg-slate-900 p-4 md:p-6 rounded-3xl shadow-xl overflow-hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-white font-semibold text-xs uppercase tracking-widest flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                            Reference Table
+                        </h3>
+                        <span class="text-slate-400 text-[10px]">Hover an atom to zoom</span>
+                    </div>
+                    <div id="ptable" class="periodic-table-grid w-full"></div>
+                </div>
+            </div>
+
+            <!-- Stats & Settings -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-4">Session Statistics</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500 text-xs">Correct</span>
+                            <span id="stat-correct" class="font-bold text-green-600">0</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500 text-xs">Total</span>
+                            <span id="stat-total" class="font-bold text-slate-700">0</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2">
+                            <div id="accuracy-bar" class="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-4">Settings</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Difficulty</label>
+                            <select id="level-select" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                <option value="adaptive">Progressive</option>
+                                <option value="1">Level 1</option>
+                                <option value="2">Level 2</option>
+                                <option value="3">Level 3</option>
+                                <option value="mixed">Mixed</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Display</label>
+                            <select id="display-mode" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                <option value="formula">Formula Only</option>
+                                <option value="name">Name Only</option>
+                                <option value="both" selected>Both</option>
+                            </select>
+                        </div>
+                        <button id="reset-session" class="text-xs text-red-500 font-medium hover:text-red-700 transition-colors flex items-center gap-2 pt-1">
+                             Reset Progress
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Calculator Section -->
+                <div class="bg-blue-50 p-5 rounded-2xl shadow-sm border border-blue-100">
+                    <h3 class="font-bold text-blue-800 mb-4 flex items-center gap-2 text-xs uppercase">
+                        <svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                        Calculator
+                    </h3>
+                    <div class="bg-white border-2 border-blue-200 rounded-xl p-2 mb-3 text-right shadow-inner">
+                        <div id="calc-history" class="text-[9px] text-blue-400 h-3 overflow-hidden font-mono"></div>
+                        <div id="calc-display-val" class="text-blue-900 text-lg font-mono truncate">0</div>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <button class="calc-btn !p-1.5 !bg-red-50 !text-red-600 !border-2 !border-red-400 hover:!bg-red-100" onclick="calcClear()">C</button>
+                        <button class="calc-btn !p-1.5" onclick="calcInputChar('(')">(</button>
+                        <button class="calc-btn !p-1.5" onclick="calcInputChar(')')">)</button>
+                        <button class="calc-btn !p-1.5 calc-btn-op" onclick="calcInputChar('/')">/</button>
+                        
+                        <button class="calc-btn !p-1.5" onclick="calcInputChar('7')">7</button>
+                        <button class="calc-btn !p-1.5" onclick="calcInputChar('8')">8</button>
+                        <button class="calc-btn !p-1.5" onclick="calcInputChar('9')">9</button>
+                        <button class="calc-btn !p-1.5 calc-btn-op" onclick="calcInputChar('*')">×</button>
+                        
+                        <button class="calc-btn !p-1.5" onclick="calcInputChar('4')">4</button>
+                        <button class="calc-btn !p-1.5" onclick="calcInputChar('5')">5</button>
+                        <button class="calc-btn !p-1.5" onclick="calcInputChar('6')">6</button>
+                        <button class="calc-btn !p-1.5 calc-btn-op" onclick="calcInputChar('-')">−</button>
+                        
+                        <button class="calc-btn !p-1.5" onclick="calcInputChar('1')">1</button>
+                        <button class="calc-btn !p-1.5" onclick="calcInputChar('2')">2</button>
+                        <button class="calc-btn !p-1.5" onclick="calcInputChar('3')">3</button>
+                        <button class="calc-btn !p-1.5 calc-btn-op" onclick="calcInputChar('+')">+</button>
+                        
+                        <button class="calc-btn !p-1.5 col-span-2" onclick="calcInputChar('0')">0</button>
+                        <button class="calc-btn !p-1.5" onclick="calcInputChar('.')">.</button>
+                        <button class="calc-btn !p-1.5 calc-btn-eq" onclick="calcEvaluate()">=</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Message Container -->
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full bg-slate-800 text-white font-medium shadow-2xl transition-all duration-300 z-50 opacity-0 pointer-events-none">
+        Message
+    </div>
+
+    <script>
+        // --- Data Definitions ---
+        const RAW_ATOMIC_WEIGHTS = {
+            'H': 1.008, 'He': 4.0026, 'Li': 6.94, 'Be': 9.0122, 'B': 10.81, 'C': 12.011, 'N': 14.007, 'O': 15.999, 'F': 18.998, 'Ne': 20.180,
+            'Na': 22.990, 'Mg': 24.305, 'Al': 26.982, 'Si': 28.085, 'P': 30.974, 'S': 32.06, 'Cl': 35.45, 'Ar': 39.948, 'K': 39.098, 'Ca': 40.078,
+            'Sc': 44.956, 'Ti': 47.867, 'V': 50.942, 'Cr': 51.996, 'Mn': 54.938, 'Fe': 55.845, 'Co': 58.933, 'Ni': 58.693, 'Cu': 63.546, 'Zn': 65.38,
+            'Ga': 69.723, 'Ge': 72.630, 'As': 74.922, 'Se': 78.971, 'Br': 79.904, 'Kr': 83.798, 'Rb': 85.468, 'Sr': 87.62, 'Y': 88.906, 'Zr': 91.224,
+            'Nb': 92.906, 'Mo': 95.95, 'Tc': 98, 'Ru': 101.07, 'Rh': 102.91, 'Pd': 106.42, 'Ag': 107.87, 'Cd': 112.41, 'In': 114.82, 'Sn': 118.71,
+            'Sb': 121.76, 'Te': 127.60, 'I': 126.90, 'Xe': 131.29, 'Cs': 132.91, 'Ba': 137.33, 'La': 138.91, 'Ce': 140.12, 'Pr': 140.91, 'Nd': 144.24,
+            'Pm': 145, 'Sm': 150.36, 'Eu': 151.96, 'Gd': 157.25, 'Tb': 158.93, 'Dy': 162.50, 'Ho': 164.93, 'Er': 167.26, 'Tm': 168.93, 'Yb': 173.05,
+            'Lu': 174.97, 'Hf': 178.49, 'Ta': 180.95, 'W': 183.84, 'Re': 186.21, 'Os': 190.23, 'Ir': 192.22, 'Pt': 195.08, 'Au': 196.97, 'Hg': 200.59,
+            'Tl': 204.38, 'Pb': 207.2, 'Bi': 208.98, 'Po': 209, 'At': 210, 'Rn': 222, 'Fr': 223, 'Ra': 226, 'Ac': 227, 'Th': 232.04, 'Pa': 231.04,
+            'U': 238.03, 'Np': 237, 'Pu': 244, 'Am': 243, 'Cm': 247, 'Bk': 247, 'Cf': 251, 'Es': 252, 'Fm': 257, 'Md': 258, 'No': 259, 'Lr': 262
+        };
+
+        const ATOMIC_WEIGHTS = {};
+        Object.keys(RAW_ATOMIC_WEIGHTS).forEach(symbol => {
+            ATOMIC_WEIGHTS[symbol] = Math.round(RAW_ATOMIC_WEIGHTS[symbol] * 100) / 100;
+        });
+
+        const ELEMENTS_PTABLE = [
+            { s: 'H', z: 1, c: 'nonmetal', g: 1, p: 1 },
+            { s: 'He', z: 2, c: 'noble', g: 18, p: 1 },
+            { s: 'Li', z: 3, c: 'alkali', g: 1, p: 2 },
+            { s: 'Be', z: 4, c: 'alkaline', g: 2, p: 2 },
+            { s: 'B', z: 5, c: 'metalloid', g: 13, p: 2 },
+            { s: 'C', z: 6, c: 'nonmetal', g: 14, p: 2 },
+            { s: 'N', z: 7, c: 'nonmetal', g: 15, p: 2 },
+            { s: 'O', z: 8, c: 'nonmetal', g: 16, p: 2 },
+            { s: 'F', z: 9, c: 'halogen', g: 17, p: 2 },
+            { s: 'Ne', z: 10, c: 'noble', g: 18, p: 2 },
+            { s: 'Na', z: 11, c: 'alkali', g: 1, p: 3 },
+            { s: 'Mg', z: 12, c: 'alkaline', g: 2, p: 3 },
+            { s: 'Al', z: 13, c: 'post-transition', g: 13, p: 3 },
+            { s: 'Si', z: 14, c: 'metalloid', g: 14, p: 3 },
+            { s: 'P', z: 15, c: 'nonmetal', g: 15, p: 3 },
+            { s: 'S', z: 16, c: 'nonmetal', g: 16, p: 3 },
+            { s: 'Cl', z: 17, c: 'halogen', g: 17, p: 3 },
+            { s: 'Ar', z: 18, c: 'noble', g: 18, p: 3 },
+            { s: 'K', z: 19, c: 'alkali', g: 1, p: 4 },
+            { s: 'Ca', z: 20, c: 'alkaline', g: 2, p: 4 },
+            { s: 'Cr', z: 24, c: 'transition', g: 6, p: 4 },
+            { s: 'Mn', z: 25, c: 'transition', g: 7, p: 4 },
+            { s: 'Fe', z: 26, c: 'transition', g: 8, p: 4 },
+            { s: 'Ni', z: 28, c: 'transition', g: 10, p: 4 },
+            { s: 'Cu', z: 29, c: 'transition', g: 11, p: 4 },
+            { s: 'Zn', z: 30, c: 'transition', g: 12, p: 4 },
+            { s: 'Br', z: 35, c: 'halogen', g: 17, p: 4 },
+            { s: 'Sr', z: 38, c: 'alkaline', g: 2, p: 5 },
+            { s: 'Ag', z: 47, c: 'transition', g: 11, p: 5 },
+            { s: 'I', z: 53, c: 'halogen', g: 17, p: 5 },
+            { s: 'Ba', z: 56, c: 'alkaline', g: 2, p: 6 },
+            { s: 'Au', z: 79, c: 'transition', g: 11, p: 6 },
+            { s: 'Pb', z: 82, c: 'post-transition', g: 14, p: 6 }
+        ];
+
+        const COMPOUNDS = [
+            { f: "H2O", n: "Water", lvl: 1 },
+            { f: "NaCl", n: "Sodium Chloride", lvl: 1 },
+            { f: "CH4", n: "Methane", lvl: 1 },
+            { f: "CH3OH", n: "Methanol", lvl: 1 },
+            { f: "C2H6", n: "Ethane", lvl: 1 },
+            { f: "C2H4", n: "Ethene", lvl: 1 },
+            { f: "C2H2", n: "Ethyne", lvl: 1 },
+            { f: "C2H5OH", n: "Ethanol", lvl: 1 },
+            { f: "MgO", n: "Magnesium Oxide", lvl: 1 },
+            { f: "AgCl", n: "Silver Chloride", lvl: 1 },
+            { f: "SrO", n: "Strontium Oxide", lvl: 1 },
+            { f: "ZnCl2", n: "Zinc Chloride", lvl: 1 },
+            { f: "C3H8", n: "Propane", lvl: 2 },
+            { f: "C3H6", n: "Propene", lvl: 2 },
+            { f: "C3H4", n: "Propyne", lvl: 2 },
+            { f: "C3H7OH", n: "Propanol", lvl: 2 },
+            { f: "C4H10", n: "Butane", lvl: 2 },
+            { f: "C4H8", n: "Butene", lvl: 2 },
+            { f: "C4H6", n: "Butyne", lvl: 2 },
+            { f: "C4H9OH", n: "Butanol", lvl: 2 },
+            { f: "H2SO4", n: "Sulfuric Acid", lvl: 2 },
+            { f: "NaOH", n: "Sodium Hydroxide", lvl: 2 },
+            { f: "CaCO3", n: "Calcium Carbonate", lvl: 2 },
+            { f: "CaF2", n: "Calcium Fluoride", lvl: 2 },
+            { f: "K2O", n: "Potassium Oxide", lvl: 2 },
+            { f: "MgBr2", n: "Magnesium Bromide", lvl: 2 },
+            { f: "Na2S", n: "Sodium Sulfide", lvl: 2 },
+            { f: "KClO3", n: "Potassium Chlorate", lvl: 2 },
+            { f: "Li2SO4", n: "Lithium Sulfate", lvl: 2 },
+            { f: "NaNO2", n: "Sodium Nitrite", lvl: 2 },
+            { f: "K2CrO4", n: "Potassium Chromate", lvl: 2 },
+            { f: "NH4NO3", n: "Ammonium Nitrate", lvl: 2 },
+            { f: "KMnO4", n: "Potassium Permanganate", lvl: 2 },
+            { f: "CaSO4", n: "Calcium Sulfate", lvl: 2 },
+            { f: "BaSO4", n: "Barium Sulfate", lvl: 2 },
+            { f: "Na3PO4", n: "Sodium Phosphate", lvl: 2 },
+            { f: "LiOH", n: "Lithium Hydroxide", lvl: 2 },
+            { f: "C5H12", n: "Pentane", lvl: 3 },
+            { f: "C5H10", n: "Pentene", lvl: 3 },
+            { f: "C5H8", n: "Pentyne", lvl: 3 },
+            { f: "C5H11OH", n: "Pentanol", lvl: 3 },
+            { f: "C6H14", n: "Hexane", lvl: 3 },
+            { f: "C6H12", n: "Hexene", lvl: 3 },
+            { f: "C6H10", n: "Hexyne", lvl: 3 },
+            { f: "C6H13OH", n: "Hexanol", lvl: 3 },
+            { f: "Ca(OH)2", n: "Calcium Hydroxide", lvl: 3 },
+            { f: "Mg(NO3)2", n: "Magnesium Nitrate", lvl: 3 },
+            { f: "(NH4)2SO4", n: "Ammonium Sulfate", lvl: 3 },
+            { f: "Al(OH)3", n: "Aluminum Hydroxide", lvl: 3 },
+            { f: "Li3N", n: "Lithium Nitride", lvl: 3 },
+            { f: "AlCl3", n: "Aluminum Chloride", lvl: 3 },
+            { f: "BaI2", n: "Barium Iodide", lvl: 3 },
+            { f: "Pb(NO3)2", n: "Lead(II) Nitrate", lvl: 3 },
+            { f: "Cu(NO3)2", n: "Copper(II) Nitrate", lvl: 3 },
+            { f: "Mg3(PO4)2", n: "Magnesium Phosphate", lvl: 3 },
+            { f: "(NH4)3PO4", n: "Ammonium Phosphate", lvl: 3 },
+            { f: "Ba(OH)2", n: "Barium Hydroxide", lvl: 3 },
+            { f: "K2Cr2O7", n: "Potassium Dichromate", lvl: 3 },
+            { f: "Ni(NO3)2", n: "Nickel(II) Nitrate", lvl: 3 },
+            { f: "Zn(OH)2", n: "Zinc Hydroxide", lvl: 3 },
+            { f: "(NH4)2CO3", n: "Ammonium Carbonate", lvl: 3 },
+            { f: "Sr(NO3)2", n: "Strontium Nitrate", lvl: 3 },
+            { f: "Fe2(SO4)3", n: "Iron(III) Sulfate", lvl: 3 },
+            { f: "Ca3(PO4)2", n: "Calcium Phosphate", lvl: 3 }
+        ];
+
+        // --- Application State ---
+        let currentCompound = null;
+        let currentMolarMass = 0;
+        let score = 0;
+        let totalAttempts = 0;
+        let correctCount = 0;
+        
+        let conversionData = {
+            mode: "", // "g_to_mol" or "mol_to_g"
+            givenVal: 0,
+            targetVal: 0,
+            selectedFactor: ""
+        };
+
+        // --- DOM Elements ---
+        const formulaEl = document.getElementById('formula-container');
+        const nameEl = document.getElementById('compound-name');
+        const massInput = document.getElementById('mass-input');
+        const checkBtn = document.getElementById('check-btn');
+        const feedbackEl = document.getElementById('feedback-area');
+        const scoreEl = document.getElementById('score-display');
+        const pTableEl = document.getElementById('ptable');
+        const statCorrectEl = document.getElementById('stat-correct');
+        const statTotalEl = document.getElementById('stat-total');
+        const accuracyBar = document.getElementById('accuracy-bar');
+        const difficultyBadge = document.getElementById('difficulty-badge');
+        const displayModeSelect = document.getElementById('display-mode');
+        const levelSelect = document.getElementById('level-select');
+
+        // Step Containers
+        const step1Div = document.getElementById('step-1');
+        const step2Div = document.getElementById('step-2');
+
+        function init() {
+            renderPeriodicTable();
+            nextProblem();
+            
+            checkBtn.addEventListener('click', checkMolarMass);
+            massInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') checkMolarMass();
+            });
+
+            document.getElementById('final-check-btn').addEventListener('click', checkConversion);
+            document.getElementById('conversion-answer').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') checkConversion();
+            });
+
+            displayModeSelect.addEventListener('change', updateDisplayLayout);
+            levelSelect.addEventListener('change', nextProblem);
+
+            document.getElementById('reset-session').addEventListener('click', () => {
+                score = 0; totalAttempts = 0; correctCount = 0;
+                updateUI();
+                nextProblem();
+                showToast("Stats reset!");
+            });
+        }
+
+        function updateDisplayLayout() {
+            const mode = displayModeSelect.value;
+            const labelFormulaEl = document.getElementById('label-formula');
+            const labelNameEl = document.getElementById('label-name');
+
+            if (mode === 'formula') {
+                formulaEl.style.display = 'block';
+                nameEl.style.display = 'none';
+                labelFormulaEl.style.display = 'block';
+                labelNameEl.style.display = 'none';
+            } else if (mode === 'name') {
+                formulaEl.style.display = 'none';
+                nameEl.style.display = 'block';
+                labelFormulaEl.style.display = 'none';
+                labelNameEl.style.display = 'block';
+                nameEl.className = 'text-4xl md:text-5xl font-bold text-slate-800 my-6 transition-all duration-300';
+            } else if (mode === 'both') {
+                formulaEl.style.display = 'block';
+                nameEl.style.display = 'block';
+                labelFormulaEl.style.display = 'block';
+                labelNameEl.style.display = 'none';
+                nameEl.className = 'text-slate-500 italic mb-8 text-xl transition-all duration-300';
+            }
+        }
+
+        function renderPeriodicTable() {
+            pTableEl.innerHTML = '';
+            ELEMENTS_PTABLE.forEach(el => {
+                const cell = document.createElement('div');
+                cell.className = `element-card ${el.c} text-slate-800 shadow-sm font-bold`;
+                cell.style.gridColumn = el.g;
+                cell.style.gridRow = el.p;
+                const weight = ATOMIC_WEIGHTS[el.s].toFixed(2);
+                cell.innerHTML = `
+                    <div style="font-size: 0.35rem; opacity: 0.7; line-height: 1;">${el.z}</div>
+                    <div style="font-size: 0.65rem; line-height: 1;">${el.s}</div>
+                    <div style="font-size: 0.35rem; line-height: 1; opacity: 0.8;">${weight}</div>
+                `;
+                cell.title = `${el.s}: ${weight} g/mol`;
+                pTableEl.appendChild(cell);
+            });
+        }
+
+        function parseMolarMass(formula) {
+            let stack = [{ mass: 0 }];
+            let i = 0;
+            while (i < formula.length) {
+                let char = formula[i];
+                if (char === '(') {
+                    stack.push({ mass: 0 });
+                    i++;
+                } else if (char === ')') {
+                    let group = stack.pop();
+                    i++;
+                    let multiplier = "";
+                    while (i < formula.length && /[0-9]/.test(formula[i])) {
+                        multiplier += formula[i];
+                        i++;
+                    }
+                    stack[stack.length - 1].mass += group.mass * (parseInt(multiplier) || 1);
+                } else if (/[A-Z]/.test(char)) {
+                    let symbol = char;
+                    i++;
+                    if (i < formula.length && /[a-z]/.test(formula[i])) {
+                        symbol += formula[i];
+                        i++;
+                    }
+                    let count = "";
+                    while (i < formula.length && /[0-9]/.test(formula[i])) {
+                        count += formula[i];
+                        i++;
+                    }
+                    let mass = ATOMIC_WEIGHTS[symbol] || 0;
+                    stack[stack.length - 1].mass += mass * (parseInt(count) || 1);
+                } else {
+                    i++;
+                }
+            }
+            return Math.round(stack[0].mass * 100) / 100;
+        }
+
+        function formatFormula(formula) {
+            return formula.replace(/([0-9]+)/g, '<span class="subscript">$1</span>');
+        }
+
+        function nextProblem() {
+            step1Div.classList.remove('hidden-step');
+            step2Div.classList.add('hidden-step');
+            
+            const selectedLevel = levelSelect.value;
+            let pool = COMPOUNDS;
+            if (selectedLevel === 'adaptive') {
+                if (score > 100 && score <= 300) pool = COMPOUNDS.filter(c => c.lvl >= 2);
+                else if (score > 300) pool = COMPOUNDS.filter(c => c.lvl >= 3);
+                else pool = COMPOUNDS.filter(c => c.lvl === 1);
+            } else if (selectedLevel === 'mixed') {
+                pool = COMPOUNDS;
+            } else {
+                const lvlNum = parseInt(selectedLevel);
+                pool = COMPOUNDS.filter(c => c.lvl === lvlNum);
+            }
+            const randomIndex = Math.floor(Math.random() * pool.length);
+            currentCompound = pool[randomIndex];
+            currentMolarMass = parseMolarMass(currentCompound.f);
+
+            formulaEl.style.opacity = '0';
+            nameEl.style.opacity = '0';
+            setTimeout(() => {
+                formulaEl.innerHTML = formatFormula(currentCompound.f);
+                nameEl.innerText = currentCompound.n;
+                difficultyBadge.innerText = `Level ${currentCompound.lvl}`;
+                updateDisplayLayout();
+                formulaEl.style.opacity = '1';
+                nameEl.style.opacity = '1';
+            }, 200);
+            
+            massInput.value = '';
+            feedbackEl.innerText = '';
+            massInput.focus();
+        }
+
+        function checkMolarMass() {
+            const userVal = parseFloat(massInput.value);
+            if (isNaN(userVal)) {
+                showToast("Please enter a numeric value");
+                return;
+            }
+            const actualMass = currentMolarMass;
+            const tolerance = 0.02; 
+            
+            if (Math.abs(userVal - actualMass) <= tolerance) {
+                feedbackEl.innerHTML = `<span class="text-green-600 feedback-pop">✓ Correct Molar Mass!</span>`;
+                showToast("Step 1 Complete! Now for Step 2...", "bg-green-600");
+                setTimeout(startStep2, 1000);
+            } else {
+                totalAttempts++;
+                score = Math.max(0, score - 5);
+                feedbackEl.innerHTML = `<span class="text-red-500 feedback-pop">✗ Step 1: Incorrect. Try again!</span>`;
+                massInput.classList.add('border-red-300');
+                setTimeout(() => massInput.classList.remove('border-red-300'), 500);
+                updateUI();
+            }
+        }
+
+        function startStep2() {
+            step1Div.classList.add('hidden-step');
+            step2Div.classList.remove('hidden-step');
+            feedbackEl.innerText = "";
+            
+            const isGtoMol = Math.random() > 0.5;
+            conversionData.mode = isGtoMol ? "g_to_mol" : "mol_to_g";
+            conversionData.selectedFactor = "";
+            
+            if (isGtoMol) {
+                conversionData.givenVal = Math.round((Math.random() * 200 + 1) * 100) / 100;
+                conversionData.targetVal = Math.round((conversionData.givenVal / currentMolarMass) * 1000) / 1000;
+                document.getElementById('given-unit').innerText = "g";
+                document.getElementById('target-unit').innerText = "mol";
+            } else {
+                conversionData.givenVal = Math.round((Math.random() * 4 + 0.1) * 1000) / 1000;
+                conversionData.targetVal = Math.round((conversionData.givenVal * currentMolarMass) * 100) / 100;
+                document.getElementById('given-unit').innerText = "mol";
+                document.getElementById('target-unit').innerText = "g";
+            }
+            
+            document.getElementById('given-value').innerText = conversionData.givenVal;
+            document.getElementById('conversion-answer').value = "";
+            
+            const factorDisplays = document.querySelectorAll('.factor-val-mm');
+            factorDisplays.forEach(el => el.innerText = currentMolarMass.toFixed(2));
+            
+            document.getElementById('factor-num').innerText = "?";
+            document.getElementById('factor-den').innerText = "?";
+            document.getElementById('factor-container').className = "relative flex flex-col items-center justify-center w-48 h-24 border-2 border-dashed border-blue-300 rounded-xl bg-blue-50/30 transition-all";
+        }
+
+        function selectFactor(choice) {
+            conversionData.selectedFactor = choice;
+            const mmStr = currentMolarMass.toFixed(2) + " g";
+            const molStr = "1 mol";
+            
+            if (choice === 'g_to_mol') {
+                document.getElementById('factor-num').innerText = molStr;
+                document.getElementById('factor-den').innerText = mmStr;
+            } else {
+                document.getElementById('factor-num').innerText = mmStr;
+                document.getElementById('factor-den').innerText = molStr;
+            }
+            
+            document.getElementById('factor-container').classList.add('border-solid', 'border-blue-500', 'bg-blue-100');
+            document.getElementById('factor-container').classList.remove('border-dashed', 'border-blue-300', 'bg-blue-50/30');
+        }
+
+        function checkConversion() {
+            const userVal = parseFloat(document.getElementById('conversion-answer').value);
+            totalAttempts++;
+
+            if (isNaN(userVal)) {
+                showToast("Enter a numeric result!");
+                return;
+            }
+
+            if (!conversionData.selectedFactor) {
+                showToast("Select a conversion factor first!", "bg-amber-600");
+                return;
+            }
+
+            let factorCorrect = false;
+            if (conversionData.mode === "g_to_mol" && conversionData.selectedFactor === "g_to_mol") factorCorrect = true;
+            if (conversionData.mode === "mol_to_g" && conversionData.selectedFactor === "mol_to_g") factorCorrect = true;
+
+            const mathCorrect = Math.abs(userVal - conversionData.targetVal) / conversionData.targetVal < 0.01; 
+
+            if (factorCorrect && mathCorrect) {
+                correctCount++;
+                score += (currentCompound.lvl * 50);
+                feedbackEl.innerHTML = `<span class="text-green-600 feedback-pop">✓ PERFECT! Conversion Factor & Math Correct.</span>`;
+                showToast("Calculation Complete!", "bg-green-600");
+                updateUI();
+                setTimeout(nextProblem, 2000);
+            } else if (!factorCorrect) {
+                score = Math.max(0, score - 10);
+                feedbackEl.innerHTML = `<span class="text-red-500 feedback-pop">✗ Wrong Conversion Factor! Units must cancel.</span>`;
+                updateUI();
+            } else {
+                score = Math.max(0, score - 5);
+                feedbackEl.innerHTML = `<span class="text-red-500 feedback-pop">✗ Conversion factor is right, but check your math.</span>`;
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            scoreEl.innerText = score;
+            statCorrectEl.innerText = correctCount;
+            statTotalEl.innerText = totalAttempts;
+            const accuracy = totalAttempts === 0 ? 0 : (correctCount / totalAttempts) * 100;
+            accuracyBar.style.width = `${accuracy}%`;
+        }
+
+        function showToast(msg, bgColor = "bg-slate-800") {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.className = `fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full text-white font-medium shadow-2xl transition-all duration-300 z-50 ${bgColor} opacity-100`;
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                toast.classList.remove('opacity-100');
+            }, 2500);
+        }
+
+        let calcExpr = "";
+        const calcDisplay = document.getElementById('calc-display-val');
+        const calcHistory = document.getElementById('calc-history');
+
+        function calcInputChar(c) {
+            if (calcExpr === "Error") calcExpr = "";
+            calcExpr += c;
+            updateCalcUI();
+        }
+
+        function calcClear() {
+            calcExpr = "";
+            calcHistory.innerText = "";
+            updateCalcUI();
+        }
+
+        function calcEvaluate() {
+            try {
+                const sanitized = calcExpr.replace(/[^-()\d/*+.]/g, '');
+                const result = eval(sanitized);
+                calcHistory.innerText = calcExpr + " =";
+                calcExpr = Number.isInteger(result) ? result.toString() : result.toFixed(4).replace(/\.?0+$/, "");
+                updateCalcUI();
+            } catch (e) {
+                calcExpr = "Error";
+                updateCalcUI();
+            }
+        }
+
+        function updateCalcUI() {
+            calcDisplay.innerText = calcExpr || "0";
+            calcDisplay.scrollLeft = calcDisplay.scrollWidth;
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
